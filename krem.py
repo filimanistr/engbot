@@ -65,7 +65,8 @@ def kfullmeaning(peer_id, random_id, text):
         f.write(sound)
 
     # For answers check the https://vk.com/dev/upload_files_3 (12's checkpoint)
-    data = {'file':open('sounds/%s.ogg'%(text), 'rb')}
+    f = open('sounds/%s.ogg'%(text), 'rb')
+    data = {'file':f}
     rlink = requests.get('https://api.vk.com/method/docs.getMessagesUploadServer?peer_id=%s&type=audio_message&access_token=%s&v=5.131'%(peer_id, token)).text
     mlink = json.loads(rlink)
     mlink = mlink['response']['upload_url']
@@ -76,7 +77,7 @@ def kfullmeaning(peer_id, random_id, text):
     rrlink = requests.get('https://api.vk.com/method/docs.save?file=%s&title=%s.ogg&access_token=%s&v=5.131'%(file_, text, token)).text
     mmlink = json.loads(rrlink)
     response = requests.get('https://api.vk.com/method/messages.send?peer_id=%s&random_id=%s&message=%s&attachment=doc%s_%s_%s&access_token=%s&v=5.131'%(peer_id, random_id, message, mmlink['response']['audio_message']['owner_id'], mmlink['response']['audio_message']['id'], mmlink['response']['audio_message']['access_key'], token))
-
+    f.close()
 
 def ksay (peer_id, random_id, text):
     """ COMBINE DIFFERENT AUDIO FILES INTO ONE AUDIO MESSAGE """
@@ -93,7 +94,8 @@ def ksay (peer_id, random_id, text):
         f.write(say)
 
     # For answers check the https://vk.com/dev/upload_files_3 (12's checkpoint)
-    data = {'file':open('sounds/say/%s.ogg'%(name), 'rb')}
+    f = open('sounds/say/%s.ogg'%(name), 'rb')
+    data = {'file':f}
     rlink = requests.get('https://api.vk.com/method/docs.getMessagesUploadServer?peer_id=%s&type=audio_message&access_token=%s&v=5.131'%(peer_id, token)).text
     mlink = json.loads(rlink)
     mlink = mlink['response']['upload_url']
@@ -105,7 +107,7 @@ def ksay (peer_id, random_id, text):
     mmlink = json.loads(rrlink)
     requests.get('https://api.vk.com/method/messages.send?peer_id=%s&random_id=%s&attachment=doc%s_%s_%s&access_token=%s&v=5.131'%(peer_id, random_id, mmlink['response']['audio_message']['owner_id'], mmlink['response']['audio_message']['id'], mmlink['response']['audio_message']['access_key'], token))
     name+=1
-
+    f.close()
 def kfig(peer_id, random_id, text):
     """ TRABSLATE RUSSIAN TO CHINESE AND BACK """
     text = text[2]
