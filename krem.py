@@ -14,22 +14,22 @@ name = 0
 def khelp(peer_id, random_id):
     """ SEND ALL THE COMMANDS WHICH BOT CAN GET """
     message = '''Крем, Functions:\n
-        / Get help
-        krem help\n
-        / Get the meaning of a word
-        krem m <eng word>
-        krem meaning <eng word>\n
-        / Get the full meaning with pronunciation (other definitions)
-        krem fm <eng word>\n
-        / Get the translate of a sentence/word
-        krem t <eng/rus sentence>
-        krem т <eng/rus sentence>
-        krem translate <eng/rus sentence>\n
-        / Get the pronunciation or the text
-        krem say <eng word/sentence>\n
-        // Get the chinese to russian translate and back
-        krem fig <chinese/rus word/sentence>
-        krem рис <chinese/rus word/sentence>'''
+/ Get help
+krem help\n
+/ Get the meaning of a word
+krem m <eng word>
+krem meaning <eng word>\n
+/ Get the full meaning with pronunciation (other definitions)
+krem fm <eng word>\n
+/ Get the translate of a sentence/word
+krem t <eng/rus sentence>
+krem т <eng/rus sentence>
+krem translate <eng/rus sentence>\n
+/ Get the pronunciation or the text
+krem say <eng word/sentence>\n
+// Get the chinese to russian translate and back
+krem fig <chinese/rus word/sentence>
+krem рис <chinese/rus word/senten'''
     requests.get('https://api.vk.com/method/messages.send?peer_id=%s&random_id=%s&message=%s&access_token=%s&v=5.131'%(peer_id, random_id, message, token))
 
 def ktranslate(peer_id, random_id, text):
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     while True:
         updates = vkapi.ListenLP()
-        print(updates)
+        # print(updates)
 
         if updates['type'] == 'message_new':
             text = updates['object']['message']['text']
@@ -163,3 +163,5 @@ if __name__ == '__main__':
                         kmeaning(peer_id, random_id, text)
                     except:
                         requests.get('https://api.vk.com/method/messages.send?peer_id=%s&random_id=%s&message=Try another word&access_token=%s&v=5.131'%(peer_id, random_id, token))
+                from streamlit import caching
+                caching.clear_cache()
