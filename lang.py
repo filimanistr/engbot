@@ -50,7 +50,6 @@ class language:
             # Downoad html page
             r = urllib.request.Request(site, headers = headers)
             html = urllib.request.urlopen(r).read()
-
             # pass html to bs4
             soup = BeautifulSoup(html, 'lxml')
 

@@ -40,13 +40,16 @@ class Krem():
     krem рис <chinese/rus word/senten'''
         return message
 
+    def give_info(self):
+        pass
+
     def give_meaning(self, word):
         language = lang.language(word)
         message = language.define()
         return message
 
     def give_full_meaning(self, text, vkapi):
-        """ SEND ALL THE DEFINITIONS OF WORD TO THE USER + prononciaton """
+        """ Send all the definitions of word to the user + prononciaton """
         language = lang.language(text)
         response = language.fdefine()
         sound = language.pron()
@@ -61,13 +64,15 @@ class Krem():
 
         link = vkapi.get('docs.getMessagesUploadServer', peer_id=self.peer_id, type='audio_message')
         link = link['response']['upload_url']
-        rrlink = requests.post(link, files = data).json()
-        file_ = rrlink['file']
+        load_file = requests.post(link, files = data).json()
+        fileid = load_file['file']
 
-        rrlink = requests.get('https://api.vk.com/method/docs.save?file=%s&title=%s.ogg&access_token=%s&v=5.131'%(file_, text, token)).text
-        mmlink = json.loads(rrlink)
-        response = requests.get('https://api.vk.com/method/messages.send?peer_id=%s&random_id=%s&message=%s&attachment=doc%s_%s_%s&access_token=%s&v=5.131'%(self.peer_id, self.random_id, message, mmlink['response']['audio_message']['owner_id'], mmlink['response']['audio_message']['id'], mmlink['response']['audio_message']['access_key'], token))
+        fileid = vkapi.get('docs.save', file=fileid, title=text+'.ogg')
         f.close()
+        attachment = 'doc%s_%s_%s'%(fileid['response']['audio_message']['owner_id'],
+                                    fileid['response']['audio_message']['id'],
+                                    fileid['response']['audio_message']['access_key'])
+        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message, attachment=attachment)
 
     def give_translate(self, text):
         language = lang.language(text)
@@ -152,8 +157,7 @@ if __name__ == '__main__':
                 if text[1] == 'fm':
                     try:
                         text = text[2]
-                        message = krem.give_full_meaning(text, vkapi)
-                        # vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
+                        krem.give_full_meaning(text, vkapi)
                     except:
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
