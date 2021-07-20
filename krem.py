@@ -165,6 +165,6 @@ if __name__ == '__main__':
                     except:
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
-                Clear cache after script
+                # Clear cache after script
                 from streamlit import caching
                 caching.clear_cache()
