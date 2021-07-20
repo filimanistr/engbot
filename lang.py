@@ -67,6 +67,7 @@ class language:
         m = language.meaning(self)
         if m != None:
             response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
+
             if m['s'][0] != []:
                 syn = ', '.join(m['s'][0])
                 synonyms = 'Synonyms: %s'%(syn)
@@ -87,6 +88,24 @@ class language:
                 response+='\n\n'
 
             return response.rstrip()
+        return "Use an english words only"
+
+    def give_synonyms(self):
+        m = language.meaning(self)
+        if m != None:
+            response = ''
+            ss = []
+            for i in range(len(m['s'])):
+                if m['s'][i] != []:
+                    for j in m['s'][i]:
+                        ss.append(j)
+
+            if ss != []:
+                syn = ', '.join(set(ss))
+                synonyms = 'Synonyms for %s: %s'%(self.text, syn)
+                response+=synonyms
+                return response
+            return "There isn any synonyms for %s"%(self.text.capitalize())
         return "Use an english words only"
 
     def pron(self):

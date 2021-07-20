@@ -165,6 +165,15 @@ if __name__ == '__main__':
                     except:
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
+                if text[1] == 's' or text[1] == 'synonyms':
+                    try:
+                        word = text[2]
+                        m = lang.language(word)
+                        message = m.give_synonyms()
+                        vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
+                    except:
+                        vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
+
                 # Clear cache after script
                 from streamlit import caching
                 caching.clear_cache()
