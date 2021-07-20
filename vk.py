@@ -5,6 +5,12 @@ class vkapi:
         self.token = token
         self.data = None
 
+    def get(self, method, **kwargs):
+        param = {'v':'5.131', 'access_token':self.token}
+        param.update(kwargs)
+        r = requests.post('https://api.vk.com/method/'+method, data=param)
+        return json.loads(r.text)
+
     def GetLP(self):
         r = requests.get('https://api.vk.com/method/groups.getLongPollServer?group_id=202800459&access_token=%s&v=5.131'%(self.token))
         self.data = json.loads(r.text)
