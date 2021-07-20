@@ -43,19 +43,17 @@ class Krem():
     / Get help
     krem help\n
     / Get the meaning of a word
-    krem m <eng word>
-    krem meaning <eng word>\n
+    krem м/m/meaning <eng word>
     / Get the full meaning with pronunciation (other definitions)
-    krem fm <eng word>\n
+    krem фм/fm <eng word>\n
+    / Get all the existing synonyms of word
+    krem с/s/синонимы/synonyms <eng word>
     / Get the translate of a sentence/word
-    krem t <eng/rus sentence>
-    krem т <eng/rus sentence>
-    krem translate <eng/rus sentence>\n
+    krem т/t/translate <eng/rus sentence>
     / Get the pronunciation or the text
     krem say <eng word/sentence>\n
     // Get the chinese to russian translate and back
-    krem fig <chinese/rus word/sentence>
-    krem рис <chinese/rus word/senten'''
+    krem рис/fig <chinese/rus word/sentence>'''
         return message
 
     def give_info(self):
@@ -117,8 +115,8 @@ if __name__ == '__main__':
 
         if updates['type'] == 'message_new':
             text = updates['object']['message']['text']
-            text = text.split(' ', 2)
-            if len(text) > 1 and text[0] == 'krem' or text[0] == "Krem" or text[0] == "Крем" or text[0] == "крем":
+            text = text.lower().split(' ', 2)
+            if len(text) > 1 and text[0] in ("krem", "крем"):
                 peer_id = updates['object']['message']['peer_id']
                 random_id = updates['object']['message']['random_id']
                 krem = Krem(peer_id, random_id)
@@ -127,7 +125,7 @@ if __name__ == '__main__':
                     message = krem.give_help()
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
 
-                if text[1] == 'fig' or text[1] == 'рис':
+                if text[1] in ('fig', 'рис'):
                     try:
                         text = text[2]
                         message = krem.fig(text)
@@ -135,7 +133,7 @@ if __name__ == '__main__':
                     except:
                         message = "Something wrong, use only russian and chinese languages"
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
-                if text[1] == 't' or text[1] == 'т' or text[1] == 'translate':
+                if text[1] in ('t', 'т', 'translate'):
                     try:
                         text = text[2]
                         message = krem.give_translate(text)
@@ -143,7 +141,7 @@ if __name__ == '__main__':
                     except:
                         message = 'Something worng, use only russian and englins languages'
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
-                if text[1] == 'fm':
+                if text[1] in ('fm', 'фм'):
                     try:
                         text = text[2]
                         krem.give_full_meaning(text, vkapi)
@@ -156,7 +154,7 @@ if __name__ == '__main__':
                         krem.say(text, vkapi)
                     except:
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
-                if text[1] == 'm' or text[1] == 'meaning':
+                if text[1] in ('m', 'м', 'meaning'):
                     try:
                         word = text[2]
                         # stack.put([peer_id, random_id, word])
@@ -165,7 +163,7 @@ if __name__ == '__main__':
                     except:
                         vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
-                if text[1] == 's' or text[1] == 'synonyms':
+                if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                     try:
                         word = text[2]
                         m = lang.language(word)
