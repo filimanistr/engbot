@@ -111,8 +111,7 @@ async def logic(vkapi):
     updates = stack.get()
     print(updates)
 
-    if updates != [] and updates[0]['type'] == 'message_new':
-        updates = updates[0]
+    if updates['type'] == 'message_new':
         text = updates['object']['message']['text']
         text = text.lower().split(' ', 2)
         if len(text) > 1 and text[0] in ("krem", "крем"):
@@ -176,12 +175,14 @@ async def logic(vkapi):
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
             # Clear cache after script
-            from streamlit import caching
-            caching.clear_cache()
+            # from streamlit import caching
+            # caching.clear_cache()
 
 async def get_updates(vkapi):
     data = vkapi.ListenLP()
-    stack.put(data)
+    if data != []:
+        for i in data:
+            stack.put(i)
 
 async def main():
     vkapi = vk.vkapi(token)
