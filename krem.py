@@ -38,23 +38,23 @@ class Krem():
         self.peer_id = peer_id
         self.random_id = random_id
 
-    def give_help(self):
+    async def give_help(self):
         """ SEND ALL THE COMMANDS WHICH BOT CAN GET """
         message = '''Крем, Functions:\n
-    / Get help
-    krem help\n
-    / Get the meaning of a word
-    krem м/m/meaning <eng word>
-    / Get the full meaning with pronunciation (other definitions)
-    krem фм/fm <eng word>\n
-    / Get all the existing synonyms of word
-    krem с/s/синонимы/synonyms <eng word>
-    / Get the translate of a sentence/word
-    krem т/t/translate <eng/rus sentence>
-    / Get the pronunciation or the text
-    krem say <eng word/sentence>\n
-    // Get the chinese to russian translate and back
-    krem рис/fig <chinese/rus word/sentence>'''
+/ Get help
+krem help\n
+/ Get the meaning of a word
+krem м/m/meaning <eng word>
+/ Get the full meaning with pronunciation (other definitions)
+krem фм/fm <eng word>\n
+/ Get all the existing synonyms of word
+krem с/s/синонимы/synonyms <eng word>
+/ Get the translate of a sentence/word
+krem т/t/translate <eng/rus sentence>
+/ Get the pronunciation or the text
+krem say <eng word/sentence>\n
+// Get the chinese to russian translate and back
+krem рис/fig <chinese/rus word/sentence>'''
         return message
 
     def give_info(self):
@@ -65,28 +65,28 @@ class Krem():
         message = await language.define()
         return message
 
-    def give_full_meaning(self, text, vkapi):
+    async def give_full_meaning(self, text, vkapi):
         """ Send all the definitions of word to the user + prononciaton """
         language = lang.language(text)
-        response = language.fdefine()
-        sound = language.pron()
+        response = await language.fdefine()
+        # sound = await language.pron()
         message = response
 
-        with open('sounds/%s.ogg'%(text), 'wb') as f:
-            f.write(sound)
+        # with open('sounds/%s.ogg'%(text), 'wb') as f:
+        #     f.write(sound)
 
-        attachment = Bot.pin_audio_attachment(self, text, vkapi, self.peer_id)
-        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message, attachment=attachment)
+        # attachment = Bot.pin_audio_attachment(self, text, vkapi, self.peer_id)
+        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
-    def give_translate(self, text):
+    async def give_translate(self, text):
         language = lang.language(text)
-        message = language.translate()
+        message = await language.translate()
         return message
 
-    def fig(self, text):
+    async def fig(self, text):
         """ Translate russian to chinese and back """
         language = lang.language(text)
-        message = language.kfig()
+        message = await language.kfig()
         return message
 
     def say(self, text, vkapi):
@@ -119,13 +119,13 @@ async def logic(vkapi):
             krem = Krem(peer_id, random_id)
 
             if text[1] == 'help':
-                message = krem.give_help()
+                message = await krem.give_help()
                 vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
 
             if text[1] in ('fig', 'рис'):
                 try:
                     text = text[2]
-                    message = krem.fig(text)
+                    message = await krem.fig(text)
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     message = "Something wrong, use only russian and chinese languages"
@@ -133,7 +133,7 @@ async def logic(vkapi):
             if text[1] in ('t', 'т', 'translate'):
                 try:
                     text = text[2]
-                    message = krem.give_translate(text)
+                    message = await krem.give_translate(text)
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     message = 'Something worng, use only russian and englins languages'
@@ -141,13 +141,14 @@ async def logic(vkapi):
             if text[1] in ('fm', 'фм'):
                 try:
                     text = text[2]
-                    krem.give_full_meaning(text, vkapi)
+                    await krem.give_full_meaning(text, vkapi)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
             if text[1] == 'say':
                 try:
                     text = text[2]
-                    krem.say(text, vkapi)
+                    # krem.say(text, vkapi)
+                    vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Doesnt work yet")
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
             if text[1] in ('m', 'м', 'meaning'):
@@ -157,19 +158,18 @@ async def logic(vkapi):
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
-                print("HERE!\n\n\n\n")
             if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                 try:
                     word = text[2]
                     m = lang.language(word)
-                    message = m.give_synonyms()
+                    message = await m.give_synonyms()
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
-            print("HERE2\n\n\n\n")
+
             # Clear cache after script
-            # from streamlit import caching
-            # caching.clear_cache()
+            from streamlit import caching
+            caching.clear_cache()
 
 async def get_updates(vkapi):
     data = await vkapi.ListenLP()
@@ -182,17 +182,10 @@ async def main():
     await vkapi.GetLP()
 
     while True:
-        # task1 = asyncio.create_task(get_updates(vkapi))
-        # task2 = asyncio.create_task(logic(vkapi))
-
         if stack.qsize() == 0:
-            print("DO TASK 1")
             await get_updates(vkapi)
-            # await asyncio.wait({task1})
         else:
-            print("DO TASK 2")
             await logic(vkapi)
-            # await asyncio.wait({task2})
 
 if __name__ == '__main__':
     asyncio.run(main())
