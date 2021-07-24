@@ -38,7 +38,7 @@ class Krem():
         self.peer_id = peer_id
         self.random_id = random_id
 
-    async def give_help(self):
+    def give_help(self):
         """ SEND ALL THE COMMANDS WHICH BOT CAN GET """
         message = '''Крем, Functions:\n
     / Get help
@@ -57,15 +57,15 @@ class Krem():
     krem рис/fig <chinese/rus word/sentence>'''
         return message
 
-    async def give_info(self):
+    def give_info(self):
         pass
 
     async def give_meaning(self, word):
         language = lang.language(word)
-        message = language.define()
+        message = await language.define()
         return message
 
-    async def give_full_meaning(self, text, vkapi):
+    def give_full_meaning(self, text, vkapi):
         """ Send all the definitions of word to the user + prononciaton """
         language = lang.language(text)
         response = language.fdefine()
@@ -78,18 +78,18 @@ class Krem():
         attachment = Bot.pin_audio_attachment(self, text, vkapi, self.peer_id)
         vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message, attachment=attachment)
 
-    async def give_translate(self, text):
+    def give_translate(self, text):
         language = lang.language(text)
         message = language.translate()
         return message
 
-    async def fig(self, text):
+    def fig(self, text):
         """ Translate russian to chinese and back """
         language = lang.language(text)
         message = language.kfig()
         return message
 
-    async def say(self, text, vkapi):
+    def say(self, text, vkapi):
         """ Combine different audio files into one audio message """
         global name
         for i in range(len(text)):
@@ -106,7 +106,6 @@ class Krem():
         name+=1
         vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, attachment=attachment)
 
-
 async def logic(vkapi):
     updates = stack.get()
     print(updates)
@@ -120,15 +119,13 @@ async def logic(vkapi):
             krem = Krem(peer_id, random_id)
 
             if text[1] == 'help':
-                task = asyncio.create_task(krem.give_help())
-                message = await task
+                message = krem.give_help()
                 vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
 
             if text[1] in ('fig', 'рис'):
                 try:
                     text = text[2]
-                    task = asyncio.create_task(krem.fig(text))
-                    message = await task
+                    message = krem.fig(text)
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     message = "Something wrong, use only russian and chinese languages"
@@ -136,8 +133,7 @@ async def logic(vkapi):
             if text[1] in ('t', 'т', 'translate'):
                 try:
                     text = text[2]
-                    task = asyncio.create_task(krem.give_translate(text))
-                    message = await task
+                    message = krem.give_translate(text)
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     message = 'Something worng, use only russian and englins languages'
@@ -145,26 +141,23 @@ async def logic(vkapi):
             if text[1] in ('fm', 'фм'):
                 try:
                     text = text[2]
-                    task = asyncio.create_task(krem.give_full_meaning(text, vkapi))
-                    await task
+                    krem.give_full_meaning(text, vkapi)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
             if text[1] == 'say':
                 try:
                     text = text[2]
-                    task = asyncio.create_task(krem.say(text, vkapi))
-                    await task
+                    krem.say(text, vkapi)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
             if text[1] in ('m', 'м', 'meaning'):
                 try:
                     word = text[2]
-                    task = asyncio.create_task(krem.give_meaning(word))
-                    message = await task
+                    message = await krem.give_meaning(word)
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
-
+                print("HERE!\n\n\n\n")
             if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                 try:
                     word = text[2]
@@ -173,25 +166,33 @@ async def logic(vkapi):
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
-
+            print("HERE2\n\n\n\n")
             # Clear cache after script
             # from streamlit import caching
             # caching.clear_cache()
 
 async def get_updates(vkapi):
-    data = vkapi.ListenLP()
+    data = await vkapi.ListenLP()
     if data != []:
         for i in data:
             stack.put(i)
 
 async def main():
     vkapi = vk.vkapi(token)
-    vkapi.GetLP()
+    await vkapi.GetLP()
 
     while True:
-        task1 = asyncio.create_task(get_updates(vkapi))
-        task2 = asyncio.create_task(logic(vkapi))
-        await asyncio.gather(task1, task2)
+        # task1 = asyncio.create_task(get_updates(vkapi))
+        # task2 = asyncio.create_task(logic(vkapi))
+
+        if stack.qsize() == 0:
+            print("DO TASK 1")
+            await get_updates(vkapi)
+            # await asyncio.wait({task1})
+        else:
+            print("DO TASK 2")
+            await logic(vkapi)
+            # await asyncio.wait({task2})
 
 if __name__ == '__main__':
     asyncio.run(main())

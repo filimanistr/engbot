@@ -4,6 +4,7 @@ import urllib
 import urllib.request
 import requests
 from bs4 import BeautifulSoup
+import asyncio
 
 from googletrans import Translator
 
@@ -25,7 +26,7 @@ class language:
             return "%s - %s"%(self.text, response['text'])
         return "Use an english or russian language for translate"
 
-    def meaning(self):
+    async def meaning(self):
         """ Parses all definitions from Collins dictionary, and returns string with all of them """
         if language.lan['lang'] == 'en':
             site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(self.text)
@@ -63,8 +64,8 @@ class language:
             return m
         return None
 
-    def define(self):
-        m = language.meaning(self)
+    async def define(self):
+        m = await language.meaning(self)
         if m != None:
             response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
 
