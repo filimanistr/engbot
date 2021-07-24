@@ -4,6 +4,7 @@ import urllib
 import urllib.request
 import requests
 from bs4 import BeautifulSoup
+import asyncio
 
 from googletrans import Translator
 
@@ -15,7 +16,7 @@ class language:
         self.text = text
         language.lan = language.translator.detect(self.text).__dict__
 
-    def translate(self):
+    async def translate(self):
         """ Translates text, returns string with it """
         if language.lan['lang'] == 'en':
             response = language.translator.translate(self.text, dest='ru').__dict__()
@@ -25,7 +26,7 @@ class language:
             return "%s - %s"%(self.text, response['text'])
         return "Use an english or russian language for translate"
 
-    def meaning(self):
+    async def meaning(self):
         """ Parses all definitions from Collins dictionary, and returns string with all of them """
         if language.lan['lang'] == 'en':
             site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(self.text)
@@ -63,8 +64,8 @@ class language:
             return m
         return None
 
-    def define(self):
-        m = language.meaning(self)
+    async def define(self):
+        m = await language.meaning(self)
         if m != None:
             response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
 
@@ -76,8 +77,8 @@ class language:
             return response.rstrip()
         return "Use an english words only"
 
-    def fdefine(self):
-        m = language.meaning(self)
+    async def fdefine(self):
+        m = await language.meaning(self)
         if m != None:
             response = '%s\n\n'%(self.text.capitalize())
             for i in range(len(m['gp'])):
@@ -90,8 +91,8 @@ class language:
             return response.rstrip()
         return "Use an english words only"
 
-    def give_synonyms(self):
-        m = language.meaning(self)
+    async def give_synonyms(self):
+        m = await language.meaning(self)
         if m != None:
             response = ''
             ss = []
@@ -129,7 +130,7 @@ class language:
 
         return "Use an english words only"
 
-    def kfig(self):
+    async def kfig(self):
         """ Translate russian to chinese and back. Returns the transkated word/sentence """
         if language.lan['lang'] == 'ru':
             response = language.translator.translate(self.text, dest='zh-CN').__dict__()
