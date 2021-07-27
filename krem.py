@@ -60,9 +60,9 @@ krem рис/fig <chinese/rus word/sentence>'''
     def give_info(self):
         pass
 
-    async def give_meaning(self, word):
+    async def give_meaning(self, word, dictionary='collins'):
         language = lang.language(word)
-        message = await language.define()
+        message = await language.define(dictionary)
         return message
 
     async def give_full_meaning(self, text, vkapi):
@@ -106,7 +106,7 @@ krem рис/fig <chinese/rus word/sentence>'''
         name+=1
         vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, attachment=attachment)
 
-async def logic(vkapi):
+async def handler(vkapi):
     updates = stack.get()
     print(updates)
 
@@ -167,25 +167,34 @@ async def logic(vkapi):
                 except:
                     vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
 
+            if text[1] == 'urban' and text[2] in ('m', 'м', 'meaning'):
+                try:
+                    word = text[3]
+                    dictionary = text[1]
+                    message = await krem.give_meaning(word, dictionary)
+                except:
+                    vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Try another word")
+
             # Clear cache after script
             from streamlit import caching
             caching.clear_cache()
 
-async def get_updates(vkapi):
-    data = await vkapi.ListenLP()
+def get_updates(vkapi):
+    data = vkapi.ListenLP()
     if data != []:
-        for i in data:
-            stack.put(i)
+        for i in data: stack.put(i)
 
-async def main():
+if __name__ == "__main__":
     vkapi = vk.vkapi(token)
-    await vkapi.GetLP()
+    vkapi.GetLP()
 
     while True:
         if stack.qsize() == 0:
-            await get_updates(vkapi)
+            get_updates(vkapi)
         else:
-            await logic(vkapi)
+            try:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(handler(vkapi))
+            except:
+                print("Something went wrong")
 
-if __name__ == '__main__':
-    asyncio.run(main())

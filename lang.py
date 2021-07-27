@@ -26,7 +26,7 @@ class language:
             return "%s - %s"%(self.text, response['text'])
         return "Use an english or russian language for translate"
 
-    async def meaning(self):
+    async def collins_meaning(self):
         """ Parses all definitions from Collins dictionary, and returns string with all of them """
         if language.lan['lang'] == 'en':
             site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(self.text)
@@ -64,21 +64,27 @@ class language:
             return m
         return None
 
-    async def define(self):
-        m = await language.meaning(self)
-        if m != None:
-            response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
+    async def urban_meaning(self):
+        pass
 
-            if m['s'][0] != []:
-                syn = ', '.join(m['s'][0])
-                synonyms = 'Synonyms: %s'%(syn)
-                response+=synonyms
+    async def define(self, dictionary):
+        if dictionary == 'collins':
+            m = await language.collins_meaning(self)
+            if m != None:
+                response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
 
-            return response.rstrip()
-        return "Use an english words only"
+                if m['s'][0] != []:
+                    syn = ', '.join(m['s'][0])
+                    synonyms = 'Synonyms: %s'%(syn)
+                    response+=synonyms
+
+                return response.rstrip()
+            return "Use an english words only"
+        if dictionary == 'urban':
+            pass
 
     async def fdefine(self):
-        m = await language.meaning(self)
+        m = await language.collins_meaning(self)
         if m != None:
             response = '%s\n\n'%(self.text.capitalize())
             for i in range(len(m['gp'])):
@@ -92,7 +98,7 @@ class language:
         return "Use an english words only"
 
     async def give_synonyms(self):
-        m = await language.meaning(self)
+        m = await language.collins_meaning(self)
         if m != None:
             response = ''
             ss = []
