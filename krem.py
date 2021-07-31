@@ -63,10 +63,10 @@ krem рис/fig <chinese/rus word/sentence>'''
         message = await language.define(dictionary)
         vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
-    async def give_full_meaning(self, text):
+    async def give_full_meaning(self, text, dictionary='collins'):
         """ Send all the definitions of word to the user + prononciaton """
         language = lang.language(text)
-        response = await language.fdefine()
+        response = await language.fdefine(dictionary)
         # sound = await language.pron()
         message = response
 
@@ -75,6 +75,11 @@ krem рис/fig <chinese/rus word/sentence>'''
 
         # attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
         self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+
+    async def give_synonyms(self, text):
+        language = lang.language(text)
+        message = await language.give_synonyms()
+        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_translate(self, text):
         language = lang.language(text)
@@ -142,17 +147,21 @@ async def handler(vkapi):
                 tasks.put(task)
             if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                 word = text[2]
-                m = lang.language(word)
-                message = await m.give_synonyms()
-                vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message=message)
+                tast = loop.create_task(krem.give_synonyms(word))
+                tasks.put(task)
 
-            '''
-            if text[1] == 'urban' and text[2] in ('m', 'м', 'meaning'):
-                try:
-                    word = text[3]
-                    dictionary = text[1]
-                    message = await krem.give_meaning(word, dictionary)
-            '''
+            textt = text[2].split()
+            if text[1] in ("collins", "urban", "cambridge") and textt[0] in ("m", "м", "meaning", "fm", "фм"):
+                command = textt[0]
+                word = textt[1]
+                dictionary = text[1]
+
+                if command in ("fm", "фм"):
+                    task = loop.create_task(krem.give_full_meaning(word, dictionary))
+                    tasks.put(task)
+                if command in ("m", "м", "meaning"):
+                    task = loop.create_task(krem.give_meaning(word, dictionary))
+                    tasks.put(task)
 
 async def main(vkapi):
     """ Something """
