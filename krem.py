@@ -3,6 +3,7 @@
 import os
 import json
 import asyncio
+import threading
 from queue import LifoQueue
 
 import requests
@@ -13,7 +14,6 @@ import lang
 token = os.getenv('TOKEN')
 name = 0
 stack = LifoQueue()
-tasks = LifoQueue()
 
 class Bot:
     def pin_audio_attachment(self, text, vkapi, peer_id):
@@ -61,7 +61,7 @@ krem рис/fig <chinese/rus word/sentence>'''
     async def give_meaning(self, word, dictionary='collins'):
         language = lang.language(word)
         message = await language.define(dictionary)
-        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_full_meaning(self, text, dictionary='collins'):
         """ Send all the definitions of word to the user + prononciaton """
@@ -79,18 +79,18 @@ krem рис/fig <chinese/rus word/sentence>'''
     async def give_synonyms(self, text):
         language = lang.language(text)
         message = await language.give_synonyms()
-        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_translate(self, text):
         language = lang.language(text)
         message = await language.translate()
-        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def fig(self, text):
         """ Translate russian to chinese and back """
         language = lang.language(text)
         message = await language.kfig()
-        vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     def say(self, text):
         """ Combine different audio files into one audio message """
@@ -122,20 +122,16 @@ async def handler(vkapi):
             krem = Krem(vkapi, peer_id, random_id)
 
             if text[1] == 'help':
-                task = loop.create_task(krem.give_help())
-                tasks.put(task)
+                task = asyncio.create_task(krem.give_help())
             if text[1] in ('fig', 'рис'):
                 text = text[2]
-                task = loop.create_task(krem.fig(text))
-                tasks.put(task)
+                task = asyncio.create_task(krem.fig(text))
             if text[1] in ('t', 'т', 'translate'):
                 text = text[2]
-                task = loop.create_task(krem.give_translate(text))
-                tasks.put(task)
+                task = asyncio.create_task(krem.give_translate(text))
             if text[1] in ('fm', 'фм'):
                 text = text[2]
-                task = loop.create_task(krem.give_full_meaning(text))
-                tasks.put(task)
+                task = asyncio.create_task(krem.give_full_meaning(text))
             if text[1] == 'say':
                 text = text[2]
                 # krem.say(text)
@@ -143,57 +139,43 @@ async def handler(vkapi):
 
             if text[1] in ('m', 'м', 'meaning'):
                 word = text[2]
-                task = loop.create_task(krem.give_meaning(word))
-                tasks.put(task)
+                task = asyncio.create_task(krem.give_meaning(word))
             if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                 word = text[2]
-                tast = loop.create_task(krem.give_synonyms(word))
-                tasks.put(task)
+                tast = asyncio.create_task(krem.give_synonyms(word))
 
-            textt = text[2].split()
+            if len(text) > 2: textt = text[2].split()
             if text[1] in ("collins", "urban", "cambridge") and textt[0] in ("m", "м", "meaning", "fm", "фм"):
                 command = textt[0]
                 word = textt[1]
                 dictionary = text[1]
 
                 if command in ("fm", "фм"):
-                    task = loop.create_task(krem.give_full_meaning(word, dictionary))
-                    tasks.put(task)
+                    task = asyncio.create_task(krem.give_full_meaning(word, dictionary))
                 if command in ("m", "м", "meaning"):
-                    task = loop.create_task(krem.give_meaning(word, dictionary))
-                    tasks.put(task)
+                    task = asyncio.create_task(krem.give_meaning(word, dictionary))
 
-async def main(vkapi):
-    """ Something """
-    qtasks = []
-    for j in range(stack.qsize()):
-        await handler(vkapi)
-
-    if tasks.qsize() != 0:
-        for i in range(tasks.qsize()):
-            qtasks.append(tasks.get())
-
-        await asyncio.wait([*qtasks])
 
 def get_updates(vkapi):
     """ Gets list of updates (dictionaries) from vkapi, and puts them into the stack """
-    data = vkapi.ListenLP()
-    if data != []:
-        for i in data: stack.put(i)
+    while True:
+        data = vkapi.ListenLP()
+        if data != []:
+            for i in data: stack.put(i)
+
 
 if __name__ == "__main__":
     vkapi = vk.vkapi(token)
     vkapi.GetLP()
 
+    thread = threading.Thread(target=get_updates, args=(vkapi,))
+    thread.start()
+
     while True:
-        if stack.qsize() == 0:
-            get_updates(vkapi)
-        else:
-            try:
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(main(vkapi))
-            except:
-                 print("Something went wrong")
+        try:
+            asyncio.run(handler(vkapi))
+        except:
+            print("Something went wrong")
 
         # Clear cache after script
         from streamlit import caching
