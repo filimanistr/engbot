@@ -52,7 +52,7 @@ class Urban:
         url = 'https://api.urbandictionary.com/v0/define?term=%s'%(text)
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
         r = urllib.request.Request(url, headers=headers)
-        response = urlopen(r)
+        response = urllib.request.urlopen(r)
         data = json.loads(response.read().decode('utf-8'))
         response.close()
         return data
@@ -116,17 +116,27 @@ class language:
 
         if dictionary in dicts:
             m = await dicts[dictionary](self, self.text)
-            if m != None:
-                response = '%s\n\n'%(self.text.capitalize())
-                for i in range(len(m['gp'])):
-                    response+='%s. %s\n%s'%(i+1, m['gp'][i].capitalize(), m['d'][i].capitalize())
-                    if m['s'][i] != []:
-                        syn = ', '.join(m['s'][i])
-                        response+='Synonyms: %s'%(syn)
-                    response+='\n\n'
 
-                return response.rstrip()
-            return "Use an english words only"
+            if dictionary == 'urban':
+                response = "%s\n\n"%(self.text.capitalize())
+                for i in range(len(m['list'])):
+                    defin = m['list'][i]['definition']
+                    example = m['list'][i]['example']
+                    response+="Definition:\n%s\nExample:\n%s\n\n"%(defin, example)
+                    if i+1 != len(m['list']):
+                        response+="----------------------------\n\n"
+
+            if dictionary == 'collins':
+                if m != None:
+                    response = '%s\n\n'%(self.text.capitalize())
+                    for i in range(len(m['gp'])):
+                        response+='%s. %s\n%s'%(i+1, m['gp'][i].capitalize(), m['d'][i].capitalize())
+                        if m['s'][i] != []:
+                            syn = ', '.join(m['s'][i])
+                            response+='Synonyms: %s'%(syn)
+                        response+='\n\n'
+
+            return response.rstrip()
         return "Unknown dictionary, try theese: collins, urban, cambridge"
 
     async def give_synonyms(self):
