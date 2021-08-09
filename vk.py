@@ -12,7 +12,9 @@ class vkapi:
         return json.loads(r.text)
 
     def GetLP(self):
-        r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=202800459&access_token=%s&v=5.131'%(self.token))
+        r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=206096513&access_token=%s&v=5.131'%(self.token))
+        # Krem's group
+        # r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=202800459&access_token=%s&v=5.131'%(self.token))
         self.data = json.loads(r.text)
 
     def ListenLP(self):
