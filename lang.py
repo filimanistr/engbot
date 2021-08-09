@@ -5,6 +5,7 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 import asyncio
+import json
 
 from googletrans import Translator
 
@@ -48,37 +49,14 @@ class Collins:
 
 class Urban:
     async def get_word(self, text):
-        site = 'https://www.urbandictionary.com/define.php?term=%s'%(text)
+        url = 'https://api.urbandictionary.com/v0/define?term=%s'%(text)
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
-        # Downoad html page
-        r = urllib.request.Request(site, headers = headers)
-        html = urllib.request.urlopen(r).read()
-        # pass html to bs4
-        soup = BeautifulSoup(html, 'lxml')
+        r = urllib.request.Request(url, headers=headers)
+        response = urlopen(r)
+        data = json.loads(response.read().decode('utf-8'))
+        response.close()
+        return data
 
-        # Element with all definitions (on page 1)
-        content = soup.find('div', id='content')
-
-        # List of certain blocs with definition
-        all_def = []
-        for block in content.find_all('div', class_='def-panel'):
-            num = block.find('div', class_='ribbon').text
-            if num in ('Top definition', '1', '2', '3', '4', '5', '6', '7'):
-                all_def.append(block)
-
-        m = []
-        e = []
-        for i in range(len(all_def)):
-            meaning = all_def[i].find('div', class_='meaning')
-            if meaning != None: m.append(meaning.text)
-            else: m.append([])
-
-            example = all_def[i].find('div', class_='example')
-            if example != None: e.append(example.text)
-            else: e.append([])
-
-        m = {'m':m, 'e':e}
-        return m
 
 class Cambridge:
     async def get_word(self, text):
@@ -118,7 +96,7 @@ class language:
             m = await dicts[dictionary](self, self.text)
 
             if dictionary == 'urban':
-                response = '%s - %s\n\n%s'%(self.text.capitalize(), m['m'][0], m['e'][0])
+                response = '%s - %s\n\n%s'%(self.text.capitalize(), m['list'][0]['definition'], m['list'][0]['example'])
 
             if dictionary == 'collins':
                 response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
