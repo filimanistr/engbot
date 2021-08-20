@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import asyncio
 import threading
 from queue import LifoQueue
