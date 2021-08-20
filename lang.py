@@ -93,7 +93,10 @@ class language:
                 'cambridge':Cambridge.get_word}
 
         if dictionary in dicts:
-            m = await dicts[dictionary](self, self.text)
+            try:
+                m = await dicts[dictionary](self, self.text)
+            except:
+                return "Try another word"
 
             if dictionary == 'urban':
                 response = '%s - %s\n\n%s'%(self.text.capitalize(), m['list'][0]['definition'], m['list'][0]['example'])
@@ -115,7 +118,10 @@ class language:
                 'cambridge':Cambridge.get_word}
 
         if dictionary in dicts:
-            m = await dicts[dictionary](self, self.text)
+            try:
+                m = await dicts[dictionary](self, self.text)
+            except:
+                return "Try another word"
 
             if dictionary == 'urban':
                 response = "%s\n\n"%(self.text.capitalize())
@@ -140,7 +146,11 @@ class language:
         return "Unknown dictionary, try theese: collins, urban, cambridge"
 
     async def give_synonyms(self):
-        m = await Collins.get_word(self, self.text)
+        try:
+            m = await Collins.get_word(self, self.text)
+        except:
+            return "Try another word"
+
         if m != None:
             response = ''
             ss = []
