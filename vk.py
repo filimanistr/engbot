@@ -12,15 +12,12 @@ class vkapi:
         return json.loads(r.text)
 
     def GetLP(self):
-        r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=206096513&access_token=%s&v=5.131'%(self.token))
-        # Krem's group
-        # r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=202800459&access_token=%s&v=5.131'%(self.token))
+        r = requests.post('https://api.vk.com/method/groups.getLongPollServer?group_id=202800459&access_token=%s&v=5.131'%(self.token))
         self.data = json.loads(r.text)
 
     def ListenLP(self):
         try:
             updates = requests.post('%s?act=a_check&key=%s&ts=%s&wait=25'%(self.data['response']['server'], self.data['response']['key'], self.data['response']['ts'])).json()
-            # updates = json.loads(r.text)
 
             if 'failed' in updates:
                 self.GetLP()
