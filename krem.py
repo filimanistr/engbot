@@ -13,7 +13,8 @@ import requests
 import vk
 import lang
 
-config = ConfigParser().read("conf.cfg")
+config = ConfigParser()
+config.read('conf.cfg')
 token = config['DEFAULT']['token']
 name = 0
 stack = LifoQueue()
