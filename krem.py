@@ -18,21 +18,21 @@ stack = LifoQueue()
 
 class Bot:
     def pin_audio_attachment(self, text, vkapi, peer_id):
-        # For answers check the https://vk.com/dev/upload_files_3 (12's checkpoint)
-        f = open('sounds/%s.ogg'%(text), 'rb')
-        data = {'file':f}
+        # For answers check the https://vk.com/dev/upload_files_3
+        # (12's checkpoint)
+        with open(f"sounds/{text}.ogg", 'rb') as f:
+            data = {'file': f}
 
-        link = vkapi.get('docs.getMessagesUploadServer', peer_id=peer_id, type='audio_message')
+        link = vkapi.get('docs.getMessagesUploadServer',
+                         peer_id=peer_id,
+                         type='audio_message')
         link = link['response']['upload_url']
-        load_file = requests.post(link, files = data).json()
+        load_file = requests.post(link, files=data).json()
         fileid = load_file['file']
-
         fileid = vkapi.get('docs.save', file=fileid, title=text+'.ogg')
-        f.close()
-        attachment = 'doc%s_%s_%s'%(fileid['response']['audio_message']['owner_id'],
-                                    fileid['response']['audio_message']['id'],
-                                    fileid['response']['audio_message']['access_key'])
-        return attachment
+        fileid = fileid['response']['audio_message']
+
+        return f"doc{fileid['owner_id']}_{fileid['id']}_{fileid['access_key']}"
 
 
 class Krem():
