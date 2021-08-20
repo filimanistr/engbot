@@ -4,15 +4,18 @@ import os
 import asyncio
 import threading
 from queue import LifoQueue
+from configparser import ConfigParser
 
 import requests
 
 import vk
 import lang
 
-token = os.getenv('TOKEN')
+config = ConfigParser().read("conf.cfg")
+token = config['DEFAULT']['token']
 name = 0
 stack = LifoQueue()
+
 
 class Bot:
     def pin_audio_attachment(self, text, vkapi, peer_id):
@@ -31,6 +34,7 @@ class Bot:
                                     fileid['response']['audio_message']['id'],
                                     fileid['response']['audio_message']['access_key'])
         return attachment
+
 
 class Krem():
     def __init__(self, vkapi, peer_id, random_id):
