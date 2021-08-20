@@ -1,37 +1,42 @@
 # -*- coding: utf-8 -*-
 
-import os
-import json
+# ---Lonely_Dark edit---
+# Python 3.9.6
+
 import asyncio
 import threading
 from queue import LifoQueue
+from configparser import ConfigParser
 
 import requests
 
 import vk
 import lang
 
-token = os.getenv('TOKEN')
+config = ConfigParser().read("conf.cfg")
+token = config['DEFAULT']['token']
 name = 0
 stack = LifoQueue()
 
+
 class Bot:
     def pin_audio_attachment(self, text, vkapi, peer_id):
-        # For answers check the https://vk.com/dev/upload_files_3 (12's checkpoint)
-        f = open('sounds/%s.ogg'%(text), 'rb')
-        data = {'file':f}
+        # For answers check the https://vk.com/dev/upload_files_3
+        # (12's checkpoint)
+        with open(f"sounds/{text}.ogg", 'rb') as f:
+            data = {'file': f}
 
-        link = vkapi.get('docs.getMessagesUploadServer', peer_id=peer_id, type='audio_message')
+        link = vkapi.get('docs.getMessagesUploadServer',
+                         peer_id=peer_id,
+                         type='audio_message')
         link = link['response']['upload_url']
-        load_file = requests.post(link, files = data).json()
+        load_file = requests.post(link, files=data).json()
         fileid = load_file['file']
-
         fileid = vkapi.get('docs.save', file=fileid, title=text+'.ogg')
-        f.close()
-        attachment = 'doc%s_%s_%s'%(fileid['response']['audio_message']['owner_id'],
-                                    fileid['response']['audio_message']['id'],
-                                    fileid['response']['audio_message']['access_key'])
-        return attachment
+        fileid = fileid['response']['audio_message']
+
+        return f"doc{fileid['owner_id']}_{fileid['id']}_{fileid['access_key']}"
+
 
 class Krem():
     def __init__(self, vkapi, peer_id, random_id):
@@ -100,14 +105,15 @@ krem рис/fig <chinese/rus word/sentence>'''
             if i == 0:
                 say = language.pron()
             else:
-                say+=language.pron()
+                say += language.pron()
 
-        with open('sounds/say/%s.ogg'%(name), 'wb') as f:
+        with open('sounds/say/%s.ogg' % (name), 'wb') as f:
             f.write(say)
 
         attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
-        name+=1
+        name += 1
         self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, attachment=attachment)
+
 
 async def handler(vkapi):
     updates = stack.get()
@@ -122,16 +128,16 @@ async def handler(vkapi):
             krem = Krem(vkapi, peer_id, random_id)
 
             if text[1] == 'help':
-                task = asyncio.create_task(krem.give_help())
+                asyncio.create_task(krem.give_help())
             if text[1] in ('fig', 'рис'):
                 text = text[2]
-                task = asyncio.create_task(krem.fig(text))
+                asyncio.create_task(krem.fig(text))
             if text[1] in ('t', 'т', 'translate'):
                 text = text[2]
-                task = asyncio.create_task(krem.give_translate(text))
+                asyncio.create_task(krem.give_translate(text))
             if text[1] in ('fm', 'фм'):
                 text = text[2]
-                task = asyncio.create_task(krem.give_full_meaning(text))
+                asyncio.create_task(krem.give_full_meaning(text))
             if text[1] == 'say':
                 text = text[2]
                 # krem.say(text)
@@ -139,21 +145,23 @@ async def handler(vkapi):
 
             if text[1] in ('m', 'м', 'meaning'):
                 word = text[2]
-                task = asyncio.create_task(krem.give_meaning(word))
+                asyncio.create_task(krem.give_meaning(word))
             if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
                 word = text[2]
-                tast = asyncio.create_task(krem.give_synonyms(word))
+                asyncio.create_task(krem.give_synonyms(word))
 
-            if len(text) > 2: textt = text[2].split()
+            if len(text) > 2:
+                textt = text[2].split()
+
             if text[1] in ("collins", "urban", "cambridge") and textt[0] in ("m", "м", "meaning", "fm", "фм"):
                 command = textt[0]
                 word = textt[1]
                 dictionary = text[1]
 
                 if command in ("fm", "фм"):
-                    task = asyncio.create_task(krem.give_full_meaning(word, dictionary))
+                    asyncio.create_task(krem.give_full_meaning(word, dictionary))
                 if command in ("m", "м", "meaning"):
-                    task = asyncio.create_task(krem.give_meaning(word, dictionary))
+                    asyncio.create_task(krem.give_meaning(word, dictionary))
 
 
 def get_updates(vkapi):
@@ -161,7 +169,8 @@ def get_updates(vkapi):
     while True:
         data = vkapi.ListenLP()
         if data != []:
-            for i in data: stack.put(i)
+            for i in data:
+                stack.put(i)
 
 
 if __name__ == "__main__":
