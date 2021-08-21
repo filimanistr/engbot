@@ -13,7 +13,7 @@ class vkapi:
         return requests.get(f"https://api.vk.com/method/{method}", params=params).json()
 
     def GetLP(self):
-        self.data = requests.get("https://api.vk.com/method/groups.getLongPollServer", params={'group_id': '178007875', 'access_token': self.token, 'v': '5.131'}).json()
+        self.data = requests.get("https://api.vk.com/method/groups.getLongPollServer", params={'group_id': '202800459', 'access_token': self.token, 'v': '5.131'}).json()
 
     def ListenLP(self):
        events = requests.get(self.data['response']['server'], params={'act': 'a_check', 'ts': self.data['response']['ts'], 'key': self.data['response']['key'], 'wait': 40}).json()
