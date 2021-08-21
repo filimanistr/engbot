@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+# ---Lonely_Dark edit---
+# Python 3.9.6
+
 import requests
 
 class vkapi:
