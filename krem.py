@@ -4,7 +4,7 @@
 # Python 3.9.6
 
 import asyncio
-import threading
+from threading import Thread
 from queue import LifoQueue
 from configparser import ConfigParser
 
@@ -76,7 +76,7 @@ async def handler(vkbot):
 
     if updates['type'] == 'message_new':
         text = updates['object']['message']['text']
-        text = text.lower().split(' ', 2)
+        text = text.lower().split()
         if len(text) > 1 and text[0] in ("krem", "крем"):
             peer_id = updates['object']['message']['peer_id']
             random_id = updates['object']['message']['random_id']
@@ -84,35 +84,31 @@ async def handler(vkbot):
 
             if text[1] == 'help':
                 asyncio.create_task(krem.give_help())
-            if text[1] in ('fig', 'рис'):
-                text = text[2]
-                asyncio.create_task(krem.fig(text))
-            if text[1] in ('t', 'т', 'translate'):
-                text = text[2]
-                asyncio.create_task(krem.give_translate(text))
-            if text[1] in ('fm', 'фм'):
-                text = text[2]
-                asyncio.create_task(krem.give_full_meaning(text))
-
-            if text[1] in ('m', 'м', 'meaning'):
-                word = text[2]
-                asyncio.create_task(krem.give_meaning(word))
-            if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
-                word = text[2]
-                asyncio.create_task(krem.give_synonyms(word))
 
             if len(text) > 2:
-                textt = text[2].split()
+                word = '-'.join([str(elem) for elem in text[2:]])
 
-            if text[1] in ("collins", "urban", "cambridge") and textt[0] in ("m", "м", "meaning", "fm", "фм"):
-                command = textt[0]
-                word = textt[1]
-                dictionary = text[1]
+                if text[1] in ('fig', 'рис'):
+                    asyncio.create_task(krem.fig(word))
+                if text[1] in ('t', 'т', 'translate'):
+                    asyncio.create_task(krem.give_translate(word))
+                if text[1] in ('fm', 'фм'):
+                    asyncio.create_task(krem.give_full_meaning(word))
 
-                if command in ("fm", "фм"):
-                    asyncio.create_task(krem.give_full_meaning(word, dictionary))
-                if command in ("m", "м", "meaning"):
-                    asyncio.create_task(krem.give_meaning(word, dictionary))
+                if text[1] in ('m', 'м', 'meaning'):
+                    asyncio.create_task(krem.give_meaning(word))
+                if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
+                    asyncio.create_task(krem.give_synonyms(word))
+
+                if text[1] in ("collins", "urban", "cambridge") and text[2] in ("m", "м", "meaning", "fm", "фм"):
+                    command = text[2]
+                    word = text[3]
+                    dictionary = text[1]
+
+                    if command in ("fm", "фм"):
+                        asyncio.create_task(krem.give_full_meaning(word, dictionary))
+                    if command in ("m", "м", "meaning"):
+                        asyncio.create_task(krem.give_meaning(word, dictionary))
 
 
 def longpoll(event):
@@ -120,7 +116,10 @@ def longpoll(event):
 
 def main(vkbot):
     while True:
-        asyncio.run(handler(vkbot))
+        try:
+            asyncio.run(handler(vkbot))
+        except:
+            print("Something went wrong")
 
         # Clear cache after script
         from streamlit import caching
@@ -130,7 +129,7 @@ def main(vkbot):
 if __name__ == "__main__":
     vkbot = vk.vk(token, id=206096513, is_group=True)
 
-    thread = threading.Thread(target=main, args=(vkbot,))
+    thread = Thread(target=main, args=(vkbot,))
     thread.start()
 
     vkbot.lp_loop(longpoll)
