@@ -16,28 +16,7 @@ import lang
 config = ConfigParser()
 config.read('conf.cfg')
 token = config['DEFAULT']['token']
-name = 0
 stack = LifoQueue()
-
-
-class Bot:
-    def pin_audio_attachment(self, text, vkapi, peer_id):
-        # For answers check the https://vk.com/dev/upload_files_3
-        # (12's checkpoint)
-        with open(f"sounds/{text}.ogg", 'rb') as f:
-            data = {'file': f}
-
-        link = vkapi.get('docs.getMessagesUploadServer',
-                         peer_id=peer_id,
-                         type='audio_message')
-        link = link['response']['upload_url']
-        load_file = requests.post(link, files=data).json()
-        fileid = load_file['file']
-        fileid = vkapi.get('docs.save', file=fileid, title=text+'.ogg')
-        fileid = fileid['response']['audio_message']
-
-        return f"doc{fileid['owner_id']}_{fileid['id']}_{fileid['access_key']}"
-
 
 class Krem():
     def __init__(self, vkbot, peer_id, random_id):
@@ -52,14 +31,12 @@ class Krem():
 krem help\n
 / Get the meaning of a word
 krem м/m/meaning <eng word>
-/ Get the full meaning with pronunciation (other definitions)
+/ Get the full meaning (other definitions)
 krem фм/fm <eng word>\n
 / Get all the existing synonyms of word
 krem с/s/синонимы/synonyms <eng word>
 / Get the translate of a sentence/word
 krem т/t/translate <eng/rus sentence>
-/ Get the pronunciation or the text
-krem say <eng word/sentence>\n
 // Get the chinese to russian translate and back
 krem рис/fig <chinese/rus word/sentence>'''
         self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
@@ -73,13 +50,7 @@ krem рис/fig <chinese/rus word/sentence>'''
         """ Send all the definitions of word to the user + prononciaton """
         language = lang.language(text)
         response = await language.fdefine(dictionary)
-        # sound = await language.pron()
         message = response
-
-        # with open('sounds/%s.ogg'%(text), 'wb') as f:
-        #     f.write(sound)
-
-        # attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
         self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_synonyms(self, text):
@@ -98,22 +69,6 @@ krem рис/fig <chinese/rus word/sentence>'''
         message = await language.kfig()
         self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
-    def say(self, text):
-        """ Combine different audio files into one audio message """
-        global name
-        for i in range(len(text)):
-            language = lang.language(text[i])
-            if i == 0:
-                say = language.pron()
-            else:
-                say += language.pron()
-
-        with open('sounds/say/%s.ogg' % (name), 'wb') as f:
-            f.write(say)
-
-        attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
-        name += 1
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message, attachment=attachment)
 
 async def handler(vkbot):
     updates = stack.get()
@@ -138,10 +93,6 @@ async def handler(vkbot):
             if text[1] in ('fm', 'фм'):
                 text = text[2]
                 asyncio.create_task(krem.give_full_meaning(text))
-            if text[1] == 'say':
-                text = text[2]
-                # krem.say(text)
-                vkbot.messages.send(peer_id=peer_id, random_id=random_id, message="Doesnt work yet")
 
             if text[1] in ('m', 'м', 'meaning'):
                 word = text[2]

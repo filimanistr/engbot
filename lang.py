@@ -60,14 +60,7 @@ class Urban:
 
 class Cambridge:
     async def get_word(self, text):
-        site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(text)
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
-        # Downoad html page
-        r = urllib.request.Request(site, headers = headers)
-        html = urllib.request.urlopen(r).read()
-        # pass html to bs4
-        soup = BeautifulSoup(html, 'lxml')
-
+        pass
 
 class language:
     translator = Translator()
@@ -165,27 +158,6 @@ class language:
                 response+=synonyms
                 return response
             return "There isn any synonyms for %s"%(self.text.capitalize())
-        return "Use an english words only"
-
-    def pron(self):
-        """ Downloading mp3 pronunciation of word, and returns bytes of it """
-        if language.lan['lang'] == 'en':
-            site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(self.text)
-            headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
-            # Downoad html page
-            r = urllib.request.Request(site, headers = headers)
-            html = urllib.request.urlopen(r).read()
-            # pass html to bs4
-            soup = BeautifulSoup(html, 'lxml')
-
-            # Element with all definitions
-            pron = soup.find('span', class_="pron type-")
-            link = pron.find('span', 'ptr hwd_sound type-hwd_sound').a['data-src-mp3']
-
-            r = urllib.request.Request(link, headers = headers)
-            sound = urllib.request.urlopen(r).read()
-            return sound
-
         return "Use an english words only"
 
     async def kfig(self):
