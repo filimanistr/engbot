@@ -1,14 +1,10 @@
 # Simple bot using LongPoll Vk
 ## Usage:
-Create a conf.cfg, add to file:
+Create a conf.cfg in krem directory, add to file:
 ```
 [DEFAULT]
+id = your_group_id_here_without_quotes
 token = your_token_here_without_quotes
-```
-
-Edit vk.py, rewrite group_id to your group_id(line 16, in params):
-```
-'group_id': 'your_group_id_here_with_quotes'
 ```
 
 Create environment:
