@@ -1,5 +1,6 @@
-__pycache__
+# Ignore garbage files
+/krem/__pycache__
 env
 
 # Ignore config file
-conf.cfg
+/krem/conf.cfg

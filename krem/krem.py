@@ -15,6 +15,7 @@ import lang
 
 config = ConfigParser()
 config.read('conf.cfg')
+id = config['DEFAULT']['id']
 token = config['DEFAULT']['token']
 stack = LifoQueue()
 
@@ -127,7 +128,7 @@ def main(vkbot):
 
 
 if __name__ == "__main__":
-    vkbot = vk.vk(token, id=206096513, is_group=True)
+    vkbot = vk.vk(token, id=id, is_group=True)
 
     thread = Thread(target=main, args=(vkbot,))
     thread.start()
