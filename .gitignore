@@ -1,4 +1,5 @@
 # Ignore garbage files
+/krem/vkapi/__pycache__
 /krem/__pycache__
 env
 
