@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# ---Lonely_Dark edit---
+# ---Wells edit---
 # Python 3.9.6
 
 import asyncio
@@ -10,7 +10,7 @@ from configparser import ConfigParser
 
 import requests
 
-import vk
+from vkapi import vk
 import lang
 
 config = ConfigParser()
@@ -40,8 +40,8 @@ class Bot:
 
 
 class Krem():
-    def __init__(self, vkapi, peer_id, random_id):
-        self.vkapi = vkapi
+    def __init__(self, vkbot, peer_id, random_id):
+        self.vkbot = vkbot
         self.peer_id = peer_id
         self.random_id = random_id
 
@@ -62,12 +62,12 @@ krem т/t/translate <eng/rus sentence>
 krem say <eng word/sentence>\n
 // Get the chinese to russian translate and back
 krem рис/fig <chinese/rus word/sentence>'''
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_meaning(self, word, dictionary='collins'):
         language = lang.language(word)
         message = await language.define(dictionary)
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_full_meaning(self, text, dictionary='collins'):
         """ Send all the definitions of word to the user + prononciaton """
@@ -80,23 +80,23 @@ krem рис/fig <chinese/rus word/sentence>'''
         #     f.write(sound)
 
         # attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_synonyms(self, text):
         language = lang.language(text)
         message = await language.give_synonyms()
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def give_translate(self, text):
         language = lang.language(text)
         message = await language.translate()
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     async def fig(self, text):
         """ Translate russian to chinese and back """
         language = lang.language(text)
         message = await language.kfig()
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, message=message)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
 
     def say(self, text):
         """ Combine different audio files into one audio message """
@@ -113,10 +113,9 @@ krem рис/fig <chinese/rus word/sentence>'''
 
         attachment = Bot.pin_audio_attachment(self, text, self.vkapi, self.peer_id)
         name += 1
-        self.vkapi.get('messages.send', peer_id=self.peer_id, random_id=self.random_id, attachment=attachment)
+        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message, attachment=attachment)
 
-
-async def handler(vkapi):
+async def handler(vkbot):
     updates = stack.get()
     print(updates)
 
@@ -126,7 +125,7 @@ async def handler(vkapi):
         if len(text) > 1 and text[0] in ("krem", "крем"):
             peer_id = updates['object']['message']['peer_id']
             random_id = updates['object']['message']['random_id']
-            krem = Krem(vkapi, peer_id, random_id)
+            krem = Krem(vkbot, peer_id, random_id)
 
             if text[1] == 'help':
                 asyncio.create_task(krem.give_help())
@@ -142,7 +141,7 @@ async def handler(vkapi):
             if text[1] == 'say':
                 text = text[2]
                 # krem.say(text)
-                vkapi.get('messages.send', peer_id=peer_id, random_id=random_id, message="Doesnt work yet")
+                vkbot.messages.send(peer_id=peer_id, random_id=random_id, message="Doesnt work yet")
 
             if text[1] in ('m', 'м', 'meaning'):
                 word = text[2]
@@ -165,28 +164,22 @@ async def handler(vkapi):
                     asyncio.create_task(krem.give_meaning(word, dictionary))
 
 
-def get_updates(vkapi):
-    """ Gets list of updates (dictionaries) from vkapi, and puts them into the stack """
+def longpoll(event):
+    stack.put(event)
+
+def main(vkbot):
     while True:
-        data = vkapi.ListenLP()
-        if data != []:
-            for i in data:
-                stack.put(i)
-
-
-if __name__ == "__main__":
-    vkapi = vk.vkapi(token)
-    vkapi.GetLP()
-
-    thread = threading.Thread(target=get_updates, args=(vkapi,))
-    thread.start()
-
-    while True:
-        try:
-            asyncio.run(handler(vkapi))
-        except:
-            print("Something went wrong")
+        asyncio.run(handler(vkbot))
 
         # Clear cache after script
         from streamlit import caching
         caching.clear_cache()
+
+
+if __name__ == "__main__":
+    vkbot = vk.vk(token, id=206096513, is_group=True)
+
+    thread = threading.Thread(target=main, args=(vkbot,))
+    thread.start()
+
+    vkbot.lp_loop(longpoll)
