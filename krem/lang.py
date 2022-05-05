@@ -5,24 +5,40 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 import asyncio
+import aiohttp
 import json
 
 from googletrans import Translator
 
 
+class Scrapper:
+    def __init__(self):
+        self.session = None
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+            'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8',
+            'Connection': 'keep-alive'
+        }
+
+    async def get_session(self):
+        self.session = aiohttp.ClientSession(headers = self.headers)
+        return self.session
+
 class Collins:
+    def __init__(self):
+        self.url = 'https://www.collinsdictionary.com/dictionary/english'
+
     async def get_word(self, text):
-        site = 'https://www.collinsdictionary.com/dictionary/english/%s'%(text)
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
-        # Downoad html page
-        r = urllib.request.Request(site, headers = headers)
-        html = urllib.request.urlopen(r).read()
+        url = f'{self.url}/{text.replace(" ", "-")}'
+        async with self.session.get(url) as ret:
+            html = await ret.read()
+
         # pass html to bs4
         soup = BeautifulSoup(html, 'lxml')
-
         # Element with all definitions
         alld = soup.find('div', class_=["content definitions cobuild br", "content definitions ced"])
-
         # list of certain blocks with definition
         ad = []
         for block in alld.find_all('div', class_='hom'):
@@ -44,128 +60,120 @@ class Collins:
                 for synonym in syn.find_all('a', class_='form ref'):
                     s[i].append(synonym.text)
 
-        m = {'gp':gp, 'd':d, 's':s}
+        m = {'word': text, 'gp':gp, 'd':d, 's':s}
         return m
 
+    async def define(self, text):
+        data = await self.get_word(text)
+        # except: return "Try another word"
+
+        response = '%s (%s) - %s'%(data['word'].capitalize(), data['gp'][0], data['d'][0])
+        if data['s'][0] != []:
+            syn = ', '.join(data['s'][0])
+            synonyms = 'Synonyms: %s'%(syn)
+            response+=synonyms
+
+        return response.rstrip()
+
+    async def defines(self, text):
+        try: data = await self.get_word(text)
+        except: return "Try another word"
+        if data == None: return "Что то создает скриптовые ошибки"
+
+        response = f'{text.capitalize()}\n\n'
+        for i in range(len(data['gp'])):
+            response+='%s. %s\n%s'%(i+1, data['gp'][i].capitalize(), data['d'][i].capitalize())
+            if data['s'][i] != []:
+                syn = ', '.join(data['s'][i])
+                response+='Synonyms: %s'%(syn)
+                response+='\n'
+            response+='\n'
+
+        return response.rstrip().replace('[' ,'').replace(']' ,'')
+
 class Urban:
+    def __init__(self):
+        self.url = 'https://api.urbandictionary.com/v0/'
+
     async def get_word(self, text):
-        url = 'https://api.urbandictionary.com/v0/define?term=%s'%(text)
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3', 'Accept-Encoding': 'none', 'Accept-Language': 'en-US,en;q=0.8', 'Connection': 'keep-alive'}
-        r = urllib.request.Request(url, headers=headers)
-        response = urllib.request.urlopen(r)
-        data = json.loads(response.read().decode('utf-8'))
-        response.close()
-        return data
+        url = f'{self.url}define?term={text.replace(" ", "%20")}'
+        async with self.session.get(url) as ret:
+            response = await ret.read()
 
+        return json.loads(response.decode('utf-8'))
 
-class Cambridge:
-    async def get_word(self, text):
-        pass
+    async def define(self, text):
+        try: data = await self.dictionaries[dictionary](self, text)
+        except: return "Try another word"
 
-class language:
+        for i in range(len(data['list'])):
+            if data['list'][i]['word'].lower() == text:
+                definition = data['list'][0]['definition']
+                example = data['list'][0]['example']
+                break
+
+        try: response = f'{text.capitalize()} - {definition}\n\nExamples: {example}'.replace('[' ,'').replace(']' ,'')
+        except: response = 'Что то создает скриптовые ошибки'
+        return response.rstrip()
+
+    async def defines(self, text):
+        try: data = await self.dictionaries[dictionary](self, text)
+        except: return "Try another word"
+        if data == None: return "Что то создает скриптовые ошибки"
+
+        response = "%s\n\n"%(text.capitalize())
+        for i in range(len(data['list'])):
+            defin = data['list'][i]['definition']
+            example = data['list'][i]['example']
+            response+="Definition:\n%s\nExample:\n%s\n\n"%(defin, example)
+            response+='-----------------------------------\n\n'
+
+        return response.rstrip().replace('[' ,'').replace(']' ,'')
+
+class Dictionary:
     translator = Translator()
-    lan = None
 
-    def __init__(self, text):
-        self.text = text
-        language.lan = language.translator.detect(self.text).__dict__
+    def __init__(self):
+        self.collins = Collins()
+        self.urban = Urban()
+        self.dictionaries = {'collins':self.collins,
+                             'urban':self.urban}
 
-    async def translate(self):
-        """ Translates text and returns it """
-        lang = language.lan['lang']
-        if lang in ("ru", "en"):
-            if lang == "en": lang = "ru"
-            else: lang = "en"
-            response = language.translator.translate(self.text, dest=lang).__dict__()
-            return "%s - %s"%(self.text, response['text'])
-        return "Use an english or russian language for translate"
+    async def write(self):
+        '''Get session to request dicts'''
+        self.scrapper = Scrapper()
+        session = await self.scrapper.get_session()
+        self.collins.session = session
+        self.urban.session = session
 
-    async def define(self, dictionary):
-        dicts = {'collins':Collins.get_word,
-                'urban':Urban.get_word,
-                'cambridge':Cambridge.get_word}
+    async def translate(self, text, lang):
+        '''Translates text and returns it'''
+        language = Dictionary.translator.detect(text).__dict__
+        inlang = language['lang']
+        if inlang != 'ru': outlang = 'ru'
+        else: outlang = lang;
+        response = Dictionary.translator.translate(text, dest=outlang).__dict__()
+        return response['text']
 
-        if dictionary in dicts:
-            try:
-                m = await dicts[dictionary](self, self.text)
-            except:
-                return "Try another word"
+    async def define(self, text, dictionary, detailed=False):
+        '''Gets definition depending on dictionary and 'amount' of output'''
+        if dictionary in self.dictionaries:
+            if detailed:
+                return await self.dictionaries[dictionary].defines(text)
+            return await self.dictionaries[dictionary].define(text)
+        return 'Unknown dictionary'
 
-            if dictionary == 'urban':
-                response = '%s - %s\n\n%s'%(self.text.capitalize(), m['list'][0]['definition'], m['list'][0]['example'])
+    async def get_synonyms(self, text):
+        '''Gets synonyms of word'''
+        try: data = await self.collins.get_word(text)
+        except: return "Try another word"
+        if data == None: return "Use english words only"
 
-            if dictionary == 'collins':
-                response = '%s (%s) - %s'%(self.text.capitalize(), m['gp'][0], m['d'][0])
+        top = f'Synonyms for {text}: '
+        words = [word for words in data['s'] for word in words]
+        if words == []:
+            return f"There isn any synonyms for {text}"
 
-                if m['s'][0] != []:
-                    syn = ', '.join(m['s'][0])
-                    synonyms = 'Synonyms: %s'%(syn)
-                    response+=synonyms
+        synonyms = ', '.join(set(words))
+        return top + synonyms
 
-            return response.rstrip()
-        return "Unknown dictionary, try theese: collins, urban, cambridge"
-
-    async def fdefine(self, dictionary):
-        dicts = {'collins':Collins.get_word,
-                'urban':Urban.get_word,
-                'cambridge':Cambridge.get_word}
-
-        if dictionary in dicts:
-            try:
-                m = await dicts[dictionary](self, self.text)
-            except:
-                return "Try another word"
-
-            if dictionary == 'urban':
-                response = "%s\n\n"%(self.text.capitalize())
-                for i in range(len(m['list'])):
-                    defin = m['list'][i]['definition']
-                    example = m['list'][i]['example']
-                    response+="Definition:\n%s\nExample:\n%s\n\n"%(defin, example)
-                    if i+1 != len(m['list']):
-                        response+="----------------------------\n\n"
-
-            if dictionary == 'collins':
-                if m != None:
-                    response = '%s\n\n'%(self.text.capitalize())
-                    for i in range(len(m['gp'])):
-                        response+='%s. %s\n%s'%(i+1, m['gp'][i].capitalize(), m['d'][i].capitalize())
-                        if m['s'][i] != []:
-                            syn = ', '.join(m['s'][i])
-                            response+='Synonyms: %s'%(syn)
-                        response+='\n\n'
-
-            return response.rstrip()
-        return "Unknown dictionary, try theese: collins, urban, cambridge"
-
-    async def give_synonyms(self):
-        try:
-            m = await Collins.get_word(self, self.text)
-        except:
-            return "Try another word"
-
-        if m != None:
-            response = ''
-            ss = []
-            for i in range(len(m['s'])):
-                if m['s'][i] != []:
-                    for j in m['s'][i]:
-                        ss.append(j)
-
-            if ss != []:
-                syn = ', '.join(set(ss))
-                synonyms = 'Synonyms for %s: %s'%(self.text, syn)
-                response+=synonyms
-                return response
-            return "There isn any synonyms for %s"%(self.text.capitalize())
-        return "Use an english words only"
-
-    async def kfig(self):
-        """ Translate russian to chinese and back. Returns the transkated word/sentence """
-        lang = language.lan["lang"]
-        if lang in ("ru", "zh-CN"):
-            if lang == 'ru': lang = 'zh-CN'
-            else: lang = 'ru'
-            response = language.translator.translate(self.text, dest=lang).__dict__()
-            return "%s"%(response["text"])
-        return "Use only chineese or russian symbols"

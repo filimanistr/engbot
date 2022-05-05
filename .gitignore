@@ -1,7 +1,9 @@
 # Ignore garbage files
-/krem/vkapi/__pycache__
+/krem/aionuts/vkapi/__pycache__
+/krem/aionuts/__pycache__
 /krem/__pycache__
 env
+img
 
 # Ignore config file
 /krem/conf.cfg

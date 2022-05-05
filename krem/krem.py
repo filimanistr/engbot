@@ -1,136 +1,97 @@
 # -*- coding: utf-8 -*-
 
-# ---Wells edit---
-# Python 3.9.6
+# ---Dmitrij edit---
+# Python 3.7.3
 
 import asyncio
-from threading import Thread
-from queue import LifoQueue
+import aiohttp
+import requests
 from configparser import ConfigParser
 
-import requests
+from aionuts import Bot, types, start_polling
+from aionuts.types import Message, InlineKeyboard
 
-from vkapi import vk
 import lang
+from config import *
 
 config = ConfigParser()
 config.read('conf.cfg')
 id = config['DEFAULT']['id']
 token = config['DEFAULT']['token']
-stack = LifoQueue()
+dictionary = lang.Dictionary() # Empty
 
-class Krem():
-    def __init__(self, vkbot, peer_id, random_id):
-        self.vkbot = vkbot
-        self.peer_id = peer_id
-        self.random_id = random_id
+bot = Bot(token, id)
 
-    async def give_help(self):
-        """ SEND ALL THE COMMANDS WHICH BOT CAN GET """
-        message = '''Крем, Functions:\n
-/ Get help
-krem help\n
-/ Get the meaning of a word
-krem м/m/meaning <eng word>
-/ Get the full meaning (other definitions)
-krem фм/fm <eng word>\n
-/ Get all the existing synonyms of word
-krem с/s/синонимы/synonyms <eng word>
-/ Get the translate of a sentence/word
-krem т/t/translate <eng/rus sentence>
-// Get the chinese to russian translate and back
-krem рис/fig <chinese/rus word/sentence>'''
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+@bot.message_handler(commands='help', prefixes='krem')
+async def help(message):
+    await message.answer(Messages.HELP)
 
-    async def give_meaning(self, word, dictionary='collins'):
-        language = lang.language(word)
-        message = await language.define(dictionary)
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+@bot.message_handler(commands='d', prefixes='krem')
+async def define(message):
+    text = message.get_args()
+    if text == '':
+        text = 'Nothing to define'
+        await message.answer(text)
+        return True
 
-    async def give_full_meaning(self, text, dictionary='collins'):
-        """ Send all the definitions of word to the user + prononciaton """
-        language = lang.language(text)
-        response = await language.fdefine(dictionary)
-        message = response
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+    d = 'collins'
+    text = text.split()
+    if len(text) > 1:
+        if text[-1] in dictionary.dictionaries.keys():
+            d = text[-1]
+            text = text[:-1]
 
-    async def give_synonyms(self, text):
-        language = lang.language(text)
-        message = await language.give_synonyms()
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+    word = ' '.join(text)
+    definition = await dictionary.define(word, d)
+    await message.answer(definition)
 
-    async def give_translate(self, text):
-        language = lang.language(text)
-        message = await language.translate()
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+@bot.message_handler(commands='ds', prefixes='krem')
+async def ddefine(message):
+    text = message.get_args()
+    if text == '':
+        text = 'Nothing to define'
+        await message.answer(text)
+        return True
 
-    async def fig(self, text):
-        """ Translate russian to chinese and back """
-        language = lang.language(text)
-        message = await language.kfig()
-        self.vkbot.messages.send(peer_id=self.peer_id, random_id=self.random_id, message=message)
+    d = 'collins'
+    text = text.split()
+    if len(text) > 1:
+        if text[-1] in dictionary.dictionaries.keys():
+            d = text[-1]
+            text = text[:-1]
+
+    word = ' '.join(text)
+    definition = await dictionary.define(word, d, detailed=True)
+    await message.answer(definition)
 
 
-async def handler(vkbot):
-    updates = stack.get()
-    print(updates)
+@bot.message_handler(commands='s', prefixes='krem')
+async def send_synonyms(message):
+    text = message.get_args()
+    if text == '': response = 'Where is the word?'
+    else: response = await dictionary.get_synonyms(text)
+    await message.answer(response)
 
-    if updates['type'] == 'message_new':
-        text = updates['object']['message']['text']
-        text = text.lower().split()
-        if len(text) > 1 and text[0] in ("krem", "крем"):
-            peer_id = updates['object']['message']['peer_id']
-            random_id = updates['object']['message']['random_id']
-            krem = Krem(vkbot, peer_id, random_id)
+@bot.message_handler(commands='t', prefixes='krem')
+async def translate(message):
+    text = message.get_args()
+    if text == '': response = 'А что переводить?'
+    else: response = await dictionary.translate(text, 'en')
+    await message.answer(response)
 
-            if text[1] == 'help':
-                asyncio.create_task(krem.give_help())
-
-            if len(text) > 2:
-                word = '-'.join([str(elem) for elem in text[2:]])
-
-                if text[1] in ('fig', 'рис'):
-                    asyncio.create_task(krem.fig(word))
-                if text[1] in ('t', 'т', 'translate'):
-                    asyncio.create_task(krem.give_translate(word))
-                if text[1] in ('fm', 'фм'):
-                    asyncio.create_task(krem.give_full_meaning(word))
-
-                if text[1] in ('m', 'м', 'meaning'):
-                    asyncio.create_task(krem.give_meaning(word))
-                if text[1] in ('s', 'с', 'синонимы', 'synonyms'):
-                    asyncio.create_task(krem.give_synonyms(word))
-
-                if text[1] in ("collins", "urban", "cambridge") and text[2] in ("m", "м", "meaning", "fm", "фм"):
-                    command = text[2]
-                    word = text[3]
-                    dictionary = text[1]
-
-                    if command in ("fm", "фм"):
-                        asyncio.create_task(krem.give_full_meaning(word, dictionary))
-                    if command in ("m", "м", "meaning"):
-                        asyncio.create_task(krem.give_meaning(word, dictionary))
+@bot.message_handler(commands='td', prefixes='krem')
+async def translated(message):
+    text = message.get_args()
+    if text == '': response = 'А что переводить?'
+    else: response = await dictionary.translate(text, 'de')
+    await message.answer(response)
 
 
-def longpoll(event):
-    stack.put(event)
-
-def main(vkbot):
-    while True:
-        try:
-            asyncio.run(handler(vkbot))
-        except:
-            print("Something went wrong")
-
-        # Clear cache after script
-        from streamlit import caching
-        caching.clear_cache()
-
+async def main():
+    await dictionary.write() # Fill it
 
 if __name__ == "__main__":
-    vkbot = vk.vk(token, id=id, is_group=True)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
-    thread = Thread(target=main, args=(vkbot,))
-    thread.start()
-
-    vkbot.lp_loop(longpoll)
+    start_polling(bot, loop=loop)
