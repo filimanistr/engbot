@@ -64,8 +64,8 @@ class Collins:
         return m
 
     async def define(self, text):
-        data = await self.get_word(text)
-        # except: return "Try another word"
+        try: data = await self.get_word(text)
+        except: return "Try another word"
 
         response = '%s (%s) - %s'%(data['word'].capitalize(), data['gp'][0], data['d'][0])
         if data['s'][0] != []:
@@ -103,7 +103,7 @@ class Urban:
         return json.loads(response.decode('utf-8'))
 
     async def define(self, text):
-        try: data = await self.dictionaries[dictionary](self, text)
+        try: data = await self.get_word(text)
         except: return "Try another word"
 
         for i in range(len(data['list'])):
@@ -117,7 +117,7 @@ class Urban:
         return response.rstrip()
 
     async def defines(self, text):
-        try: data = await self.dictionaries[dictionary](self, text)
+        try: data = await self.get_word(text)
         except: return "Try another word"
         if data == None: return "Что то создает скриптовые ошибки"
 
