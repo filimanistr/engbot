@@ -21,12 +21,13 @@ token = config['DEFAULT']['token']
 dictionary = lang.Dictionary() # Empty
 
 bot = Bot(token, id)
+prefixes = ['krem', 'крем']
 
-@bot.message_handler(commands='help', prefixes='krem')
+@bot.message_handler(commands='help', prefixes=prefixes, ignore_case=True)
 async def help(message):
     await message.answer(Messages.HELP)
 
-@bot.message_handler(commands='d', prefixes='krem')
+@bot.message_handler(commands='d', prefixes=prefixes, ignore_case=True)
 async def define(message):
     text = message.get_args()
     if text == '':
@@ -45,7 +46,7 @@ async def define(message):
     definition = await dictionary.define(word, d)
     await message.answer(definition)
 
-@bot.message_handler(commands='ds', prefixes='krem')
+@bot.message_handler(commands='ds', prefixes=prefixes, ignore_case=True)
 async def ddefine(message):
     text = message.get_args()
     if text == '':
@@ -65,21 +66,21 @@ async def ddefine(message):
     await message.answer(definition)
 
 
-@bot.message_handler(commands='s', prefixes='krem')
+@bot.message_handler(commands='s', prefixes=prefixes, ignore_case=True)
 async def send_synonyms(message):
     text = message.get_args()
     if text == '': response = 'Where is the word?'
     else: response = await dictionary.get_synonyms(text)
     await message.answer(response)
 
-@bot.message_handler(commands='t', prefixes='krem')
+@bot.message_handler(commands='t', prefixes=prefixes, ignore_case=True)
 async def translate(message):
     text = message.get_args()
     if text == '': response = 'А что переводить?'
     else: response = await dictionary.translate(text, 'en')
     await message.answer(response)
 
-@bot.message_handler(commands='td', prefixes='krem')
+@bot.message_handler(commands='td', prefixes=prefixes, ignore_case=True)
 async def translated(message):
     text = message.get_args()
     if text == '': response = 'А что переводить?'
