@@ -5,7 +5,6 @@
 
 import asyncio
 import aiohttp
-import requests
 from configparser import ConfigParser
 
 from aionuts import Bot, types, start_polling

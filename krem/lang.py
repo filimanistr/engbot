@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import urllib
-import urllib.request
-import requests
 from bs4 import BeautifulSoup
 import asyncio
 import aiohttp
