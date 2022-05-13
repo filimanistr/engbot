@@ -7,7 +7,7 @@ import asyncio
 import aiohttp
 from configparser import ConfigParser
 
-from aionuts import Bot, types, start_polling
+from aionuts import Bot, Dispatcher, types, executor
 from aionuts.types import Message, InlineKeyboard
 
 import lang
@@ -15,18 +15,19 @@ from config import *
 
 config = ConfigParser()
 config.read('conf.cfg')
-id = config['DEFAULT']['id']
+ID = config['DEFAULT']['id']
 token = config['DEFAULT']['token']
 dictionary = lang.Dictionary() # Empty
 
-bot = Bot(token, id)
+bot = Bot(token, id=ID, is_group=True)
+dp = Dispatcher(bot)
 prefixes = ['krem', 'крем']
 
-@bot.message_handler(commands='help', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='help', prefixes=prefixes, ignore_case=True)
 async def help(message):
     await message.answer(Messages.HELP)
 
-@bot.message_handler(commands='d', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='d', prefixes=prefixes, ignore_case=True)
 async def define(message):
     text = message.get_args()
     if text == '':
@@ -45,7 +46,7 @@ async def define(message):
     definition = await dictionary.define(word, d)
     await message.answer(definition)
 
-@bot.message_handler(commands='ds', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='ds', prefixes=prefixes, ignore_case=True)
 async def ddefine(message):
     text = message.get_args()
     if text == '':
@@ -65,21 +66,21 @@ async def ddefine(message):
     await message.answer(definition)
 
 
-@bot.message_handler(commands='s', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='s', prefixes=prefixes, ignore_case=True)
 async def send_synonyms(message):
     text = message.get_args()
     if text == '': response = 'Where is the word?'
     else: response = await dictionary.get_synonyms(text)
     await message.answer(response)
 
-@bot.message_handler(commands='t', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='t', prefixes=prefixes, ignore_case=True)
 async def translate(message):
     text = message.get_args()
     if text == '': response = 'А что переводить?'
     else: response = await dictionary.translate(text, 'en')
     await message.answer(response)
 
-@bot.message_handler(commands='td', prefixes=prefixes, ignore_case=True)
+@dp.message_handler(commands='td', prefixes=prefixes, ignore_case=True)
 async def translated(message):
     text = message.get_args()
     if text == '': response = 'А что переводить?'
@@ -94,4 +95,4 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
 
-    start_polling(bot, loop=loop)
+    executor.start_polling(dp, loop=loop)
