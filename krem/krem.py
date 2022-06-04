@@ -13,6 +13,7 @@ from aionuts.types import Message, InlineKeyboard
 import lang
 from config import *
 
+
 config = ConfigParser()
 config.read('conf.cfg')
 ID = config['DEFAULT']['id']
@@ -65,7 +66,6 @@ async def ddefine(message):
     definition = await dictionary.define(word, d, detailed=True)
     await message.answer(definition)
 
-
 @dp.message_handler(commands='s', prefixes=prefixes, ignore_case=True)
 async def send_synonyms(message):
     text = message.get_args()
@@ -90,9 +90,11 @@ async def translated(message):
 
 async def main():
     await dictionary.write() # Fill it
+    await dp.start_polling()
+    await dictionary.destroy()
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-
-    executor.start_polling(dp, loop=loop)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print('Killed')

@@ -143,6 +143,10 @@ class Dictionary:
         self.collins.session = session
         self.urban.session = session
 
+    async def destroy(self):
+        await self.collins.session.close()
+        await self.urban.session.close()
+
     async def translate(self, text, lang):
         '''Translates text and returns it'''
         language = Dictionary.translator.detect(text).__dict__
