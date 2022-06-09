@@ -7,11 +7,10 @@ import asyncio
 import aiohttp
 from configparser import ConfigParser
 
-from aionuts import Bot, Dispatcher, types, executor
-from aionuts.types import Message, InlineKeyboard
+from aionuts import Bot, Dispatcher, executor, types
 
-import lang
 from config import *
+import lang
 
 
 config = ConfigParser()
@@ -30,12 +29,23 @@ async def help(message):
 
 @dp.message_handler(commands='d', prefixes=prefixes, ignore_case=True)
 async def define(message):
-    text = message.get_args()
+    ''' Define type of message for correct response '''
+    if message.is_command(): text = message.get_args()
+    else: text = message.text
+
+    commands = ('d', '/d@KremKremlebot', None)
+    # Если это команда d ИЛИ команды нет вообще то ОК
+    if message.get_command() not in commands:
+        text = 'Unknown command'
+        await message.reply(text)
+        return True
+
     if text == '':
         text = 'Nothing to define'
         await message.answer(text)
         return True
 
+    '''Do actual work, getting response'''
     d = 'collins'
     text = text.split()
     if len(text) > 1:
@@ -86,6 +96,8 @@ async def translated(message):
     if text == '': response = 'А что переводить?'
     else: response = await dictionary.translate(text, 'de')
     await message.answer(response)
+
+dp.register_message_handler(define, chat_type='private')
 
 
 async def main():
