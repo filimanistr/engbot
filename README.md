@@ -1,6 +1,6 @@
 # Simple bot using LongPoll Vk
 ## Usage:
-Create a conf.cfg in krem directory, add to file:
+Create a conf.cfg in src directory, add to file:
 ```
 [DEFAULT]
 id = your_group_id_here_without_quotes
