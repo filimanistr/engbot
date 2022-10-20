@@ -18,7 +18,10 @@ HEADERS = {
 }
 
 
-PREFIXES = ['krem', 'крем']
+TG_PREFIXES = '/'
+VK_PREFIXES = ['krem', 'крем']
+PREFIXES = VK_PREFIXES
+
 HELP_MESSAGE = '''Получить определениe слова
 krem d eng_word
 Получить определения слов

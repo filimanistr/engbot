@@ -5,7 +5,8 @@
 
 import asyncio
 import logging
-from aionuts import Bot, Dispatcher
+from aionuts import Bot, Dispatcher, types
+from aionuts.dispatcher.filters import Command
 from dataclasses import dataclass
 
 from middlewares import ContentMiddleware
@@ -34,11 +35,11 @@ def format_user_input(word):
     return UserRequest(word)
 
 
-@dp.message_handler(commands='help', prefixes=PREFIXES, ignore_case=True)
+@dp.message_handler(Command(['h', 'help'], prefixes=PREFIXES, ignore_case=True))
 async def help(message):
     await message.answer(HELP_MESSAGE)
 
-@dp.message_handler(commands='d', prefixes=PREFIXES, ignore_case=True)
+@dp.message_handler(Command('d', prefixes=PREFIXES, ignore_case=True))
 async def define(message):
     text = message.text
     if message.is_command():
@@ -46,17 +47,18 @@ async def define(message):
 
     # check if msg is a command 'd' or not a command at all
     commands = ('d', '/d', '/d@KremKremlebot', None)
-    if message.get_command() not in commands:
-        text = 'Unknown command'
-        await message.reply(text)
-        return True
+    if message.get_command() is not None:
+        if message.get_command().lower() not in commands:
+            text = 'Unknown command'
+            await message.reply(text)
+            return True
 
     text = format_user_input(text)
     dictionary = getattr(lang, text.dictionary)
     definition = await dictionary.define(text.word)
     await message.answer(definition)
 
-@dp.message_handler(commands='ds', prefixes=PREFIXES, ignore_case=True)
+@dp.message_handler(Command('ds', prefixes=PREFIXES, ignore_case=True))
 async def defines(message):
     text = message.get_args()
     text = format_user_input(text)
@@ -64,13 +66,13 @@ async def defines(message):
     definition = await dictionary.defines(text.word)
     await message.answer(definition)
 
-@dp.message_handler(commands='s', prefixes=PREFIXES, ignore_case=True)
+@dp.message_handler(Command('s', prefixes=PREFIXES, ignore_case=True))
 async def send_synonyms(message):
     text = message.get_args()
     response = await lang.get_synonyms(text)
     await message.answer(response)
 
-@dp.message_handler(commands='t', prefixes=PREFIXES, ignore_case=True)
+@dp.message_handler(Command('t', prefixes=PREFIXES, ignore_case=True))
 async def translate(message):
     text = message.get_args()
     response = await lang.translate(text, 'en')
