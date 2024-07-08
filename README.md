@@ -1,33 +1,7 @@
-# Simple bot using LongPoll Vk
-## Usage:
-Create a conf.cfg in src directory, add to file:
-```
-[DEFAULT]
-id = your_group_id_here_without_quotes
-token = your_token_here_without_quotes
-```
+# engbot
 
-Create environment:
-```
-python -m venv krem
-```
+**From now on Collins website is protected by cloudflare, so bot can't get definitions from Collins as others apps that was parsing this site, but it can get definitions from Urban Dictionary which isn't usefull**
 
-On Windows:
-```
-krem\Scripts\activate.bat
-```
-
-On Linux, or MacOS:
-```
-source krem/bin/activate
-```
-
-Install dependencies:
-```
-pip install -r requirements.txt
-```
-
-Run krem.py:
-```
-python krem.py
-```
+## TODO:
+* add Cambridge Dictionary
+* get rid of VK api
